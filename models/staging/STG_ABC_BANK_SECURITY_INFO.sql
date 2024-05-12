@@ -20,19 +20,20 @@ default_record as (
     , 'Missing'             as INDUSTRY_NAME
     , '-1'                  as COUNTRY_CODE
     , '-1'                  as EXCHANGE_CODE
-    , '2020-01-01'          as LOAD_TS_UTC
+    , '2020-01-01'          as LOAD_TS
     , 'System.DefaultKey'   as RECORD_SOURCE
 ),
 hashed as (
     SELECT
-        concat_ws('|', SECURITY_CODE) as SECURITY_HKEY
-      , concat_ws('|', SECURITY_CODE,
-                       SECURITY_NAME, SECTOR_NAME,
-                       INDUSTRY_NAME, COUNTRY_CODE,
-                       EXCHANGE_CODE )
-                as SECURITY_HDIFF
-            , * EXCLUDE LOAD_TS
-            , LOAD_TS as LOAD_TS_UTC
-    FROM src_data
+        {{ dbt_utils.surrogate_key([ 'SECURITY_CODE' ])
+        }} as SECURITY_HKEY
+        , {{ dbt_utils.surrogate_key([
+        'SECURITY_CODE', 'SECURITY_NAME', 'SECTOR_NAME',
+        'INDUSTRY_NAME', 'COUNTRY_CODE', 'EXCHANGE_CODE' ])
+        }} as SECURITY_HDIFF
+        , * EXCLUDE LOAD_TS
+        , LOAD_TS as LOAD_TS_UTC
+    FROM default_record
 )
+
 SELECT * FROM hashed,
